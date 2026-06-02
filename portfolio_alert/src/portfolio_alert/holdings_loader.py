@@ -12,7 +12,12 @@ REQUIRED_COLUMNS = ["code", "name", "shares", "cost_price", "enabled", "remark"]
 def load_holdings(path: Path | str) -> list[Holding]:
     config_path = Path(path)
     if not config_path.exists():
-        raise FileNotFoundError(f"持仓文件不存在: {config_path}")
+        example_path = config_path.with_name("holdings.example.yaml")
+        raise FileNotFoundError(
+            "未找到 holdings.yaml。\n"
+            "请复制 holdings.example.yaml 为 holdings.yaml，并填写真实持仓信息。\n"
+            f"示例文件位置: {example_path}"
+        )
 
     with config_path.open("r", encoding="utf-8") as file:
         data = yaml.safe_load(file) or {}

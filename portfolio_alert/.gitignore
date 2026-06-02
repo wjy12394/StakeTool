@@ -9,9 +9,16 @@ __pycache__/
 logs/
 *.log
 
-# Local config / sensitive holdings
-holdings.local.yaml
+# Local data
+data/
+portfolio_alert/data/
+
+# Private config
+holdings.yaml
+portfolio_alert/holdings.yaml
 config.local.yaml
+portfolio_alert/config.local.yaml
+holdings.local.yaml
 
 # Build
 dist/

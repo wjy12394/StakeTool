@@ -1,0 +1,21 @@
+holdings:
+  - code: "510300"
+    name: "沪深300ETF"
+    shares: 1200
+    cost_price: 4.80
+    enabled: true
+    remark: "示例持仓，请改成你的真实成本价"
+
+  - code: "562500"
+    name: "机器人ETF"
+    shares: 5300
+    cost_price: 1.10
+    enabled: true
+    remark: "示例持仓，可删除或修改"
+
+  - code: "159819"
+    name: "人工智能ETF"
+    shares: 2600
+    cost_price: 1.90
+    enabled: true
+    remark: "示例持仓，可删除或修改"

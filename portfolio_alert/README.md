@@ -4,7 +4,7 @@
 
 ## 功能
 
-- 从 `holdings.yaml` 读取持仓。
+- 从本地私有的 `holdings.yaml` 读取持仓。
 - 从 `config.yaml` 读取刷新间隔、交易时间、盈亏阈值、日志等配置。
 - 使用 AKShare 获取 ETF 实时行情，不再请求 A股行情接口。
 - 计算单只标的市值、浮动盈亏、收益率，以及组合汇总结果。
@@ -26,7 +26,15 @@ python -m pip install -r requirements.txt
 
 ## 编辑持仓
 
-持仓写在 `holdings.yaml`，不要写进 Python 代码。证券代码建议加引号，便于保留前导零。
+项目提供 `holdings.example.yaml` 作为示例文件；真实持仓写在本地私有的 `holdings.yaml`，不要写进 Python 代码，也不要提交到 Git。
+
+第一次使用时复制一份示例文件：
+
+```powershell
+Copy-Item holdings.example.yaml holdings.yaml
+```
+
+然后编辑 `holdings.yaml`。证券代码建议加引号，便于保留前导零。
 
 ```yaml
 holdings:
@@ -62,6 +70,15 @@ holdings:
 - `remark`：备注。
 
 新增持仓时在 `holdings:` 下添加一项即可；临时忽略某只标的时把 `enabled` 改为 `false`。
+
+如果启动时看到：
+
+```text
+未找到 holdings.yaml。
+请复制 holdings.example.yaml 为 holdings.yaml，并填写真实持仓信息。
+```
+
+说明还没有创建本地真实持仓文件，按上面的复制命令处理即可。
 
 ## 编辑配置
 

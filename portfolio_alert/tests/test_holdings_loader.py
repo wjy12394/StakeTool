@@ -80,3 +80,14 @@ def test_load_empty_holdings_returns_empty_list(tmp_path: Path):
     config_path = write_yaml(tmp_path / "holdings.yaml", "holdings: []\n")
 
     assert load_holdings(config_path) == []
+
+
+def test_missing_holdings_file_tells_user_to_copy_example(tmp_path: Path):
+    config_path = tmp_path / "holdings.yaml"
+
+    with pytest.raises(FileNotFoundError) as exc_info:
+        load_holdings(config_path)
+
+    message = str(exc_info.value)
+    assert "未找到 holdings.yaml" in message
+    assert "请复制 holdings.example.yaml 为 holdings.yaml" in message
