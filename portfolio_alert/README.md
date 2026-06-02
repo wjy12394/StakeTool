@@ -8,7 +8,7 @@
 - 从 `config.yaml` 读取刷新间隔、交易时间、盈亏阈值、日志等配置。
 - 使用 AKShare 获取 ETF 实时行情，不再请求 A股行情接口。
 - 计算单只标的市值、浮动盈亏、收益率，以及组合汇总结果。
-- 默认每 15 分钟刷新一次，控制台静默运行。
+- 默认每 15 分钟刷新一次，启动时打印一次状态摘要，之后控制台静默运行。
 - 当组合或单只标的亏损/盈利达到阈值时，通过 `win11toast` 弹出 Windows 通知。
 - 交易日收盘后发送一次持仓日报。
 - 通知失败时自动退回到命令行输出。
@@ -71,10 +71,10 @@ holdings:
 refresh_interval_sec: 900
 
 trading_time:
-  morning_start: "09:25"
-  morning_end: "11:35"
-  afternoon_start: "12:55"
-  afternoon_end: "15:05"
+  morning_start: "09:30"
+  morning_end: "11:30"
+  afternoon_start: "13:00"
+  afternoon_end: "15:00"
   skip_weekends: true
 
 alert:
@@ -86,7 +86,9 @@ alert:
   notify_on_recover: true
 
 console:
-  quiet: true
+  silent: true
+  show_startup_summary: true
+  show_non_trading_message: true
   show_portfolio_each_refresh: false
 
 daily_report:
@@ -104,7 +106,9 @@ conda activate base
 python run.py
 ```
 
-默认静默运行，不会每轮刷屏。重要提醒会弹出 Windows 通知；运行明细写入 `logs/portfolio_alert.log`。
+启动后会立即打印一次当前监控状态，包括是否交易时间、启用持仓数量、刷新频率、当前组合状态和下一次刷新时间。之后默认静默运行，不会每轮刷屏。重要提醒会弹出 Windows 通知；运行明细写入 `logs/portfolio_alert.log`。
+
+如果当前不是交易时间，程序会在启动时尝试获取一次行情：能获取到价格时显示最近一次可用组合状态；无法获取时显示“暂未获取到有效行情”。非交易时段运行期间不会每分钟重复刷屏。
 
 ## Windows 开机自启动
 

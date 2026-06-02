@@ -17,10 +17,10 @@ from .models import (
 DEFAULT_CONFIG: dict[str, Any] = {
     "refresh_interval_sec": 900,
     "trading_time": {
-        "morning_start": "09:25",
-        "morning_end": "11:35",
-        "afternoon_start": "12:55",
-        "afternoon_end": "15:05",
+        "morning_start": "09:30",
+        "morning_end": "11:30",
+        "afternoon_start": "13:00",
+        "afternoon_end": "15:00",
         "skip_weekends": True,
     },
     "alert": {
@@ -41,7 +41,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "file": "logs/portfolio_alert.log",
     },
     "console": {
-        "quiet": True,
+        "silent": True,
+        "show_startup_summary": True,
+        "show_non_trading_message": True,
         "show_portfolio_each_refresh": False,
     },
     "daily_report": {
@@ -118,7 +120,9 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
         ),
         log=LogConfig(level=str(log["level"]).upper(), file=str(log["file"])),
         console=ConsoleConfig(
-            quiet=bool(console["quiet"]),
+            silent=bool(console.get("silent", console.get("quiet", True))),
+            show_startup_summary=bool(console.get("show_startup_summary", True)),
+            show_non_trading_message=bool(console.get("show_non_trading_message", True)),
             show_portfolio_each_refresh=bool(console["show_portfolio_each_refresh"]),
         ),
         daily_report=DailyReportConfig(

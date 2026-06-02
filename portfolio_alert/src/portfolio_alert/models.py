@@ -67,7 +67,9 @@ class LogConfig:
 
 @dataclass(frozen=True)
 class ConsoleConfig:
-    quiet: bool
+    silent: bool
+    show_startup_summary: bool
+    show_non_trading_message: bool
     show_portfolio_each_refresh: bool
 
 
