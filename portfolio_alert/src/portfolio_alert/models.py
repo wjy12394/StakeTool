@@ -71,6 +71,7 @@ class ConsoleConfig:
     show_startup_summary: bool
     show_non_trading_message: bool
     show_portfolio_each_refresh: bool
+    startup_quote_timeout_sec: float
 
 
 @dataclass(frozen=True)

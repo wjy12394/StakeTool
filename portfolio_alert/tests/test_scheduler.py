@@ -125,7 +125,7 @@ def test_run_loop_saves_snapshot_after_successful_refresh(tmp_path, monkeypatch)
         alert=AlertConfig(-500, -300, 500, 300, 300, True),
         market_data=MarketDataConfig("akshare", 1, 1),
         log=LogConfig("INFO", "logs/portfolio_alert.log"),
-        console=ConsoleConfig(True, True, True, False),
+        console=ConsoleConfig(True, True, True, False, 8),
         daily_report=DailyReportConfig(False, "15:05"),
     )
     snapshot_path = tmp_path / "data" / "latest_snapshot.json"

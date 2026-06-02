@@ -108,6 +108,7 @@ console:
   show_startup_summary: true
   show_non_trading_message: true
   show_portfolio_each_refresh: false
+  startup_quote_timeout_sec: 8
 
 daily_report:
   enabled: true
@@ -126,7 +127,7 @@ python run.py
 
 启动后会立即打印一次当前监控状态，包括是否交易时间、启用持仓数量、刷新频率、当前组合状态和下一次刷新时间。之后默认静默运行，不会每轮刷屏。重要提醒会弹出 Windows 通知；运行明细写入 `logs/portfolio_alert.log`。
 
-如果当前不是交易时间，程序会在启动时尝试获取一次行情：能获取到价格时显示最近一次可用组合状态；无法获取时显示“暂未获取到有效行情”。非交易时段运行期间不会每分钟重复刷屏。
+如果当前不是交易时间，程序会优先显示 `data/latest_snapshot.json` 中的最近一次组合状态，不主动等待实时行情接口。交易时间启动时会尝试获取一次实时行情，但最多等待 `console.startup_quote_timeout_sec` 秒；超时后会显示缓存并让后台循环稍后继续刷新。非交易时段运行期间不会每分钟重复刷屏。
 
 ## 缓存快照
 
@@ -136,7 +137,7 @@ python run.py
 data/latest_snapshot.json
 ```
 
-该文件只保存在本地，不提交到 Git。非交易时间启动或行情接口失败时，程序会优先显示这份缓存；如果缓存超过 7 天，会提示“缓存较旧，仅供参考”。
+该文件只保存在本地，不提交到 Git。非交易时间启动、行情接口失败或启动行情请求超时时，程序会优先显示这份缓存；如果缓存超过 7 天，会提示“缓存较旧，仅供参考”。
 
 ## Windows 开机自启动
 

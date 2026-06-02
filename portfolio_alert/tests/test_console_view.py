@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 
 from portfolio_alert.config_loader import load_config
 from portfolio_alert.console_view import format_startup_summary, print_startup_summary
@@ -122,6 +123,62 @@ def test_print_startup_summary_non_trading_uses_snapshot_when_prices_missing(tmp
     assert result is not None
     assert "最近一次可用组合状态" in output
     assert "当前组合市值：11686.30 元" in output
+
+
+def test_print_startup_summary_non_trading_uses_snapshot_without_fetching_prices(tmp_path, capsys, monkeypatch):
+    from portfolio_alert.snapshot import save_snapshot
+
+    config = load_config(tmp_path / "config.yaml")
+    snapshot_path = tmp_path / "data" / "latest_snapshot.json"
+    save_snapshot(snapshot_path, sample_result(), datetime(2026, 6, 1, 15, 1), is_trading_time=True)
+    called = {"prices": False}
+
+    def fake_prices(*args, **kwargs):
+        called["prices"] = True
+        return {"510300": 4.86}
+
+    monkeypatch.setattr("portfolio_alert.console_view.get_latest_prices", fake_prices)
+    result = print_startup_summary(
+        config,
+        sample_holdings(),
+        logger=NoopLogger(),
+        now=datetime(2026, 6, 2, 16, 0),
+        snapshot_path=snapshot_path,
+    )
+
+    output = capsys.readouterr().out
+    assert result is not None
+    assert called["prices"] is False
+    assert "最近一次可用组合状态" in output
+
+
+def test_print_startup_summary_trading_time_times_out_and_uses_snapshot(tmp_path, capsys, monkeypatch):
+    from portfolio_alert.snapshot import save_snapshot
+
+    config = load_config(tmp_path / "config.yaml")
+    object.__setattr__(config.console, "startup_quote_timeout_sec", 0.05)
+    snapshot_path = tmp_path / "data" / "latest_snapshot.json"
+    save_snapshot(snapshot_path, sample_result(), datetime(2026, 6, 1, 15, 1), is_trading_time=True)
+
+    def slow_prices(*args, **kwargs):
+        time.sleep(1)
+        return {"510300": 4.86}
+
+    monkeypatch.setattr("portfolio_alert.console_view.get_latest_prices", slow_prices)
+    start = time.perf_counter()
+    result = print_startup_summary(
+        config,
+        sample_holdings(),
+        logger=NoopLogger(),
+        now=datetime(2026, 6, 2, 10, 0),
+        snapshot_path=snapshot_path,
+    )
+    elapsed = time.perf_counter() - start
+
+    output = capsys.readouterr().out
+    assert result is not None
+    assert elapsed < 0.5
+    assert "缓存时间：2026-06-01 15:01:00" in output
 
 
 def test_print_startup_summary_marks_stale_snapshot(tmp_path, capsys, monkeypatch):

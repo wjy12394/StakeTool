@@ -11,6 +11,7 @@ def test_default_config_is_long_term_quiet_monitor(tmp_path: Path):
     assert config.console.show_startup_summary is True
     assert config.console.show_non_trading_message is True
     assert config.console.show_portfolio_each_refresh is False
+    assert config.console.startup_quote_timeout_sec == 8
     assert config.alert.total_profit_threshold == 500
     assert config.alert.single_profit_threshold == 300
     assert config.daily_report.enabled is True

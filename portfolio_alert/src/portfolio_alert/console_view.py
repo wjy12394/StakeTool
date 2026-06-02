@@ -1,4 +1,5 @@
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 import logging
 from pathlib import Path
 
@@ -32,6 +33,10 @@ def format_startup_summary(
             lines.extend(["当前暂未获取到有效行情。", ""])
         else:
             lines.extend(_format_portfolio_block(portfolio_result))
+            if snapshot_saved_at is not None:
+                lines.append(f"缓存时间：{snapshot_saved_at:%Y-%m-%d %H:%M:%S}")
+            if snapshot_stale:
+                lines.append("缓存较旧，仅供参考。")
             lines.append("")
         lines.append(f"下一次刷新时间：{next_refresh_time:%Y-%m-%d %H:%M:%S}")
         return "\n".join(lines)
@@ -78,12 +83,23 @@ def print_startup_summary(
 
     current_time = now or datetime.now()
     trading = is_trading_time(current_time, config.trading_time)
-    result = _try_get_startup_portfolio(config, holdings, logger)
+    snapshot = load_snapshot(snapshot_path) if snapshot_path is not None else None
+    result = None
     snapshot_saved_at = None
     snapshot_stale = False
-    if result is None and snapshot_path is not None:
-        snapshot = load_snapshot(snapshot_path)
-        if snapshot is not None:
+
+    if not trading and snapshot is not None:
+        result = snapshot.result
+        snapshot_saved_at = snapshot.saved_at
+        snapshot_stale = snapshot_is_stale(snapshot.saved_at, current_time)
+    else:
+        result = _try_get_startup_portfolio(
+            config,
+            holdings,
+            logger,
+            timeout_sec=config.console.startup_quote_timeout_sec,
+        )
+        if result is None and snapshot is not None:
             result = snapshot.result
             snapshot_saved_at = snapshot.saved_at
             snapshot_stale = snapshot_is_stale(snapshot.saved_at, current_time)
@@ -107,14 +123,34 @@ def print_startup_summary(
     return result
 
 
-def _try_get_startup_portfolio(config, holdings: list[Holding], logger: logging.Logger) -> PortfolioResult | None:
+def _try_get_startup_portfolio(
+    config,
+    holdings: list[Holding],
+    logger: logging.Logger,
+    timeout_sec: float,
+) -> PortfolioResult | None:
     if not holdings:
         return None
+
+    def fetch_prices():
+        return get_latest_prices([holding.code for holding in holdings], config.market_data, logger)
+
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(fetch_prices)
     try:
-        prices = get_latest_prices([holding.code for holding in holdings], config.market_data, logger)
+        prices = future.result(timeout=timeout_sec)
+    except TimeoutError:
+        future.cancel()
+        logger.error("启动摘要行情获取超过 %.1f 秒，改用缓存或稍后刷新", timeout_sec)
+        executor.shutdown(wait=False, cancel_futures=True)
+        return None
     except Exception as exc:
         logger.error("启动摘要行情获取失败: %s", exc)
+        executor.shutdown(wait=False, cancel_futures=True)
         return None
+    finally:
+        if future.done():
+            executor.shutdown(wait=False, cancel_futures=True)
     if not prices:
         return None
     return calculate_portfolio(holdings, prices)

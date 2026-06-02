@@ -29,6 +29,7 @@ console:
   show_startup_summary: true
   show_non_trading_message: true
   show_portfolio_each_refresh: false
+  startup_quote_timeout_sec: 8
 
 daily_report:
   enabled: true

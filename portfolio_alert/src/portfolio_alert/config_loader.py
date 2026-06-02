@@ -45,6 +45,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "show_startup_summary": True,
         "show_non_trading_message": True,
         "show_portfolio_each_refresh": False,
+        "startup_quote_timeout_sec": 8,
     },
     "daily_report": {
         "enabled": True,
@@ -124,6 +125,7 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
             show_startup_summary=bool(console.get("show_startup_summary", True)),
             show_non_trading_message=bool(console.get("show_non_trading_message", True)),
             show_portfolio_each_refresh=bool(console["show_portfolio_each_refresh"]),
+            startup_quote_timeout_sec=float(console.get("startup_quote_timeout_sec", 8)),
         ),
         daily_report=DailyReportConfig(
             enabled=bool(daily_report["enabled"]),
