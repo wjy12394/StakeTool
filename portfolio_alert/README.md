@@ -129,6 +129,28 @@ python run.py
 
 如果当前不是交易时间，程序会优先显示 `data/latest_snapshot.json` 中的最近一次组合状态，不主动等待实时行情接口。交易时间启动时会尝试获取一次实时行情，但最多等待 `console.startup_quote_timeout_sec` 秒；超时后会显示缓存并让后台循环稍后继续刷新。非交易时段运行期间不会每分钟重复刷屏。
 
+### 命令行参数
+
+只查看一次组合状态，不进入长期后台循环：
+
+```powershell
+python run.py --once
+```
+
+强制请求实时行情，不读取本地缓存：
+
+```powershell
+python run.py --once --no-cache
+```
+
+调试时显示更详细的控制台日志：
+
+```powershell
+python run.py --debug
+```
+
+默认模式仍保持少打扰：启动时打印一次摘要，之后不周期性刷屏。
+
 ## 缓存快照
 
 程序每次成功获取行情并完成组合计算后，会把最近一次组合状态保存到：
