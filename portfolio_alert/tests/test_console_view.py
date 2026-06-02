@@ -99,6 +99,54 @@ def test_print_startup_summary_non_trading_without_prices_does_not_crash(tmp_pat
     assert "暂未获取到有效行情" in output
 
 
+def test_print_startup_summary_non_trading_uses_snapshot_when_prices_missing(tmp_path, capsys, monkeypatch):
+    from portfolio_alert.snapshot import save_snapshot
+
+    config = load_config(tmp_path / "config.yaml")
+    snapshot_path = tmp_path / "data" / "latest_snapshot.json"
+    save_snapshot(snapshot_path, sample_result(), datetime(2026, 6, 1, 15, 1), is_trading_time=True)
+
+    def fake_prices(*args, **kwargs):
+        return {}
+
+    monkeypatch.setattr("portfolio_alert.console_view.get_latest_prices", fake_prices)
+    result = print_startup_summary(
+        config,
+        sample_holdings(),
+        logger=NoopLogger(),
+        now=datetime(2026, 6, 2, 16, 0),
+        snapshot_path=snapshot_path,
+    )
+
+    output = capsys.readouterr().out
+    assert result is not None
+    assert "最近一次可用组合状态" in output
+    assert "当前组合市值：11686.30 元" in output
+
+
+def test_print_startup_summary_marks_stale_snapshot(tmp_path, capsys, monkeypatch):
+    from portfolio_alert.snapshot import save_snapshot
+
+    config = load_config(tmp_path / "config.yaml")
+    snapshot_path = tmp_path / "data" / "latest_snapshot.json"
+    save_snapshot(snapshot_path, sample_result(), datetime(2026, 5, 20, 15, 1), is_trading_time=True)
+
+    def fake_prices(*args, **kwargs):
+        return {}
+
+    monkeypatch.setattr("portfolio_alert.console_view.get_latest_prices", fake_prices)
+    print_startup_summary(
+        config,
+        sample_holdings(),
+        logger=NoopLogger(),
+        now=datetime(2026, 6, 2, 16, 0),
+        snapshot_path=snapshot_path,
+    )
+
+    output = capsys.readouterr().out
+    assert "缓存较旧，仅供参考" in output
+
+
 class NoopLogger:
     def error(self, *args, **kwargs):
         pass

@@ -1,10 +1,12 @@
 from datetime import datetime
 import logging
+from pathlib import Path
 
 from .models import Holding, PortfolioResult
 from .market_data import get_latest_prices
 from .portfolio import calculate_portfolio
 from .scheduler import get_next_refresh_time, is_trading_time
+from .snapshot import load_snapshot, snapshot_is_stale
 
 
 def format_startup_summary(
@@ -14,6 +16,8 @@ def format_startup_summary(
     next_refresh_time: datetime,
     portfolio_result: PortfolioResult | None,
     show_non_trading_message: bool = True,
+    snapshot_saved_at: datetime | None = None,
+    snapshot_stale: bool = False,
 ) -> str:
     lines = [
         "Portfolio Alert 已启动",
@@ -53,6 +57,10 @@ def format_startup_summary(
             ]
         )
     lines.extend(_format_summary_lines(portfolio_result))
+    if snapshot_saved_at is not None:
+        lines.append(f"缓存时间：{snapshot_saved_at:%Y-%m-%d %H:%M:%S}")
+    if snapshot_stale:
+        lines.append("缓存较旧，仅供参考。")
     lines.append("")
     lines.append(f"下一次交易刷新时间：{next_refresh_time:%Y-%m-%d %H:%M:%S}")
     return "\n".join(lines)
@@ -63,6 +71,7 @@ def print_startup_summary(
     holdings: list[Holding],
     logger: logging.Logger,
     now: datetime | None = None,
+    snapshot_path: Path | str | None = None,
 ) -> PortfolioResult | None:
     if not config.console.show_startup_summary:
         return None
@@ -70,6 +79,14 @@ def print_startup_summary(
     current_time = now or datetime.now()
     trading = is_trading_time(current_time, config.trading_time)
     result = _try_get_startup_portfolio(config, holdings, logger)
+    snapshot_saved_at = None
+    snapshot_stale = False
+    if result is None and snapshot_path is not None:
+        snapshot = load_snapshot(snapshot_path)
+        if snapshot is not None:
+            result = snapshot.result
+            snapshot_saved_at = snapshot.saved_at
+            snapshot_stale = snapshot_is_stale(snapshot.saved_at, current_time)
     next_refresh = get_next_refresh_time(
         current_time,
         trading_time=config.trading_time,
@@ -83,6 +100,8 @@ def print_startup_summary(
             next_refresh_time=next_refresh,
             portfolio_result=result,
             show_non_trading_message=config.console.show_non_trading_message,
+            snapshot_saved_at=snapshot_saved_at,
+            snapshot_stale=snapshot_stale,
         )
     )
     return result

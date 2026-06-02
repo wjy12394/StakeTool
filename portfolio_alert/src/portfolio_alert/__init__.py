@@ -7,4 +7,5 @@ __all__ = [
     "notifier",
     "portfolio",
     "scheduler",
+    "snapshot",
 ]

@@ -1,6 +1,15 @@
 from datetime import datetime
 
-from portfolio_alert.models import PortfolioResult
+from portfolio_alert.models import (
+    AlertConfig,
+    AppConfig,
+    ConsoleConfig,
+    DailyReportConfig,
+    Holding,
+    LogConfig,
+    MarketDataConfig,
+    PortfolioResult,
+)
 from portfolio_alert.notifier import Alert
 from portfolio_alert.models import TradingTimeConfig
 from portfolio_alert.scheduler import (
@@ -9,6 +18,7 @@ from portfolio_alert.scheduler import (
     get_next_refresh_time,
     should_send_daily_report,
 )
+from portfolio_alert.snapshot import load_snapshot
 
 
 def empty_result() -> PortfolioResult:
@@ -106,3 +116,57 @@ def test_get_next_refresh_time_on_weekend():
     )
 
     assert result == datetime(2026, 6, 8, 9, 30)
+
+
+def test_run_loop_saves_snapshot_after_successful_refresh(tmp_path, monkeypatch):
+    config = AppConfig(
+        refresh_interval_sec=900,
+        trading_time=trading_config(),
+        alert=AlertConfig(-500, -300, 500, 300, 300, True),
+        market_data=MarketDataConfig("akshare", 1, 1),
+        log=LogConfig("INFO", "logs/portfolio_alert.log"),
+        console=ConsoleConfig(True, True, True, False),
+        daily_report=DailyReportConfig(False, "15:05"),
+    )
+    snapshot_path = tmp_path / "data" / "latest_snapshot.json"
+    holdings = [Holding("510300", "沪深300ETF", 100, 4.0, True, "")]
+
+    class StopLoop(Exception):
+        pass
+
+    class FakeDateTime(datetime):
+        @classmethod
+        def now(cls):
+            return cls(2026, 6, 2, 10, 0)
+
+    def fake_prices(*args, **kwargs):
+        return {"510300": 4.5}
+
+    def fake_sleep(*args, **kwargs):
+        raise StopLoop()
+
+    monkeypatch.setattr("portfolio_alert.scheduler.datetime", FakeDateTime)
+    monkeypatch.setattr("portfolio_alert.scheduler.get_latest_prices", fake_prices)
+    monkeypatch.setattr("portfolio_alert.scheduler.time.sleep", fake_sleep)
+
+    try:
+        from portfolio_alert.scheduler import run_loop
+
+        run_loop(config, holdings, NoopLogger(), snapshot_path=snapshot_path)
+    except StopLoop:
+        pass
+
+    snapshot = load_snapshot(snapshot_path)
+    assert snapshot is not None
+    assert snapshot.result.total_market_value == 450
+
+
+class NoopLogger:
+    def info(self, *args, **kwargs):
+        pass
+
+    def warning(self, *args, **kwargs):
+        pass
+
+    def error(self, *args, **kwargs):
+        pass

@@ -7,6 +7,7 @@ from .market_data import get_latest_prices
 from .models import AppConfig, Holding, PortfolioResult, TradingTimeConfig
 from .notifier import Alert, AlertState, evaluate_alerts, send_alert
 from .portfolio import calculate_portfolio, format_portfolio
+from .snapshot import save_snapshot
 
 
 DEFAULT_TRADING_TIME = TradingTimeConfig(
@@ -34,7 +35,12 @@ def is_trading_time(now: datetime, config: TradingTimeConfig) -> bool:
     return morning_start <= current <= morning_end or afternoon_start <= current <= afternoon_end
 
 
-def run_loop(config: AppConfig, holdings: list[Holding], logger: logging.Logger) -> None:
+def run_loop(
+    config: AppConfig,
+    holdings: list[Holding],
+    logger: logging.Logger,
+    snapshot_path=None,
+) -> None:
     state = AlertState()
     daily_report_state = DailyReportState()
     last_result: PortfolioResult | None = None
@@ -71,6 +77,8 @@ def run_loop(config: AppConfig, holdings: list[Holding], logger: logging.Logger)
                 result.total_pnl,
                 result.total_pnl_ratio,
             )
+            if snapshot_path is not None and prices:
+                save_snapshot(snapshot_path, result, now, is_trading_time=True)
             if config.console.show_portfolio_each_refresh:
                 print(f"[{now:%H:%M:%S}] {format_portfolio(result)}")
 

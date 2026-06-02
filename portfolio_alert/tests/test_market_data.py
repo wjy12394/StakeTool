@@ -1,3 +1,6 @@
+import sys
+import types
+
 import pandas as pd
 
 from portfolio_alert.market_data import AkshareMarketDataProvider
@@ -41,3 +44,23 @@ def test_akshare_provider_uses_only_etf_spot_data():
 
     assert prices == {"510300": 4.86}
     assert provider.stock_called is False
+
+
+def test_akshare_progress_output_is_suppressed(capsys, monkeypatch):
+    fake_akshare = types.SimpleNamespace()
+
+    def fake_fund_etf_spot_em():
+        print("21%|████████████")
+        print("progress on stderr", file=sys.stderr)
+        return pd.DataFrame([{"代码": "510300", "最新价": 4.86}])
+
+    fake_akshare.fund_etf_spot_em = fake_fund_etf_spot_em
+    monkeypatch.setitem(sys.modules, "akshare", fake_akshare)
+
+    provider = AkshareMarketDataProvider(DummyLogger())
+    frame = provider._fetch_etf_spot()
+
+    captured = capsys.readouterr()
+    assert frame is not None
+    assert captured.out == ""
+    assert captured.err == ""

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import redirect_stderr, redirect_stdout
+import io
 import logging
 import time
 from typing import Protocol
@@ -50,7 +52,8 @@ class AkshareMarketDataProvider:
         try:
             import akshare as ak
 
-            return ak.fund_etf_spot_em()
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                return ak.fund_etf_spot_em()
         except Exception as exc:
             self.logger.error("AKShare ETF 行情获取失败: %s", exc)
             return None

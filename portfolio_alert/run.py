@@ -16,6 +16,7 @@ from portfolio_alert.scheduler import run_loop
 def main() -> None:
     config_path = ROOT / "config.yaml"
     holdings_path = ROOT / "holdings.yaml"
+    snapshot_path = ROOT / "data" / "latest_snapshot.json"
     logger = None
 
     try:
@@ -24,8 +25,8 @@ def main() -> None:
         logger.info("程序启动")
         holdings = load_holdings(holdings_path)
         logger.info("读取持仓成功，共 %s 条启用持仓", len(holdings))
-        print_startup_summary(config, holdings, logger)
-        run_loop(config, holdings, logger)
+        print_startup_summary(config, holdings, logger, snapshot_path=snapshot_path)
+        run_loop(config, holdings, logger, snapshot_path=snapshot_path)
     except KeyboardInterrupt:
         if logger:
             logger.info("收到退出信号")
