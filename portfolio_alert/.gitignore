@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.env/
+
+# Logs
+logs/
+*.log
+
+# Local config / sensitive holdings
+holdings.local.yaml
+config.local.yaml
+
+# Build
+dist/
+build/
+*.spec
+
+# IDE
+.vscode/
