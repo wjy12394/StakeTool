@@ -1,0 +1,33 @@
+refresh_interval_sec: 900
+
+trading_time:
+  morning_start: "09:25"
+  morning_end: "11:35"
+  afternoon_start: "12:55"
+  afternoon_end: "15:05"
+  skip_weekends: true
+
+alert:
+  total_loss_threshold: -500
+  single_loss_threshold: -300
+  total_profit_threshold: 500
+  single_profit_threshold: 300
+  cooldown_sec: 300
+  notify_on_recover: true
+
+market_data:
+  provider: "akshare"
+  retry_count: 3
+  retry_interval_sec: 3
+
+log:
+  level: "INFO"
+  file: "logs/portfolio_alert.log"
+
+console:
+  quiet: true
+  show_portfolio_each_refresh: false
+
+daily_report:
+  enabled: true
+  report_time: "15:05"
